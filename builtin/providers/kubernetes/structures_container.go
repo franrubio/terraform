@@ -2,9 +2,7 @@ package kubernetes
 
 import (
 	"strconv"
-	"strings"
 
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/kubernetes/pkg/api/v1"
 	kubernetes "k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
@@ -239,12 +237,7 @@ func flattenValueFrom(in *v1.EnvVarSource) []interface{} {
 }
 
 func flattenContainerVolumeMounts(in []v1.VolumeMount, conn *kubernetes.Clientset, namespace string) ([]interface{}, error) {
-	secretList, err := conn.CoreV1().Secrets(namespace).List(meta_v1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	volumeMounts := pickUserVolumeMounts(in, secretList, namespace)
+	volumeMounts := in
 
 	att := make([]interface{}, len(volumeMounts))
 	for i, v := range volumeMounts {
@@ -336,7 +329,6 @@ func flattenContainers(in []v1.Container, conn *kubernetes.Clientset, namespace 
 		c["stdin_once"] = v.StdinOnce
 		c["tty"] = v.TTY
 		c["working_dir"] = v.WorkingDir
-
 		res, err := flattenContainerResourceRequirements(v.Resources)
 		if err != nil {
 			return nil, err
@@ -815,39 +807,6 @@ func expandEnvValueFrom(r []interface{}) (*v1.EnvVarSource, error) {
 	}
 	return obj, nil
 
-}
-
-//Return volumes mounts which were created by user explicitly excluding those created by k8s internally
-func pickUserVolumeMounts(volumeMounts []v1.VolumeMount, secretList *v1.SecretList, namespace string) []v1.VolumeMount {
-	internalVolumeMounts := make(map[string]struct{})
-	possiblyInternalVolumeMounts := make([]string, 0, len(volumeMounts))
-	for _, v := range volumeMounts {
-		if strings.HasPrefix(v.Name, "default-token-") {
-			possiblyInternalVolumeMounts = append(possiblyInternalVolumeMounts, v.Name)
-		}
-	}
-	for _, v := range possiblyInternalVolumeMounts {
-		for _, s := range secretList.Items {
-			if s.Name != v {
-				continue
-			}
-			for key, val := range s.Annotations {
-				if key == "kubernetes.io/service-account.name" && val == "default" {
-					//guarenteed internal volume mount
-					internalVolumeMounts[v] = struct{}{}
-				}
-			}
-		}
-	}
-	userVolumeMount := make([]v1.VolumeMount, 0, len(volumeMounts)-len(internalVolumeMounts))
-	for _, v := range volumeMounts {
-		//Skip the volume mount which is internal to the k8s
-		if _, ok := internalVolumeMounts[v.Name]; ok {
-			continue
-		}
-		userVolumeMount = append(userVolumeMount, v)
-	}
-	return userVolumeMount
 }
 
 func expandContainerResourceRequirements(l []interface{}) (v1.ResourceRequirements, error) {

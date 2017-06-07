@@ -90,7 +90,11 @@ func flattenPodSecurityContext(in *v1.PodSecurityContext) []interface{} {
 	if in.SELinuxOptions != nil {
 		att["se_linux_options"] = flattenSeLinuxOptions(in.SELinuxOptions)
 	}
-	return []interface{}{att}
+
+	if len(att) > 0 {
+		return []interface{}{att}
+	}
+	return []interface{}{}
 }
 
 func flattenSeLinuxOptions(in *v1.SELinuxOptions) []interface{} {

@@ -1,11 +1,11 @@
 package kubernetes
 
 import (
+	"encoding/base64"
 	"fmt"
+	"log"
 	"net/url"
 	"strings"
-
-	"encoding/base64"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -160,10 +160,12 @@ func base64EncodeStringMap(m map[string]interface{}) map[string]interface{} {
 }
 
 func flattenResourceList(l api.ResourceList) map[string]string {
+	log.Printf("[DEBUG] Flattening resource list: %#v", l)
 	m := make(map[string]string)
 	for k, v := range l {
 		m[string(k)] = v.String()
 	}
+	log.Printf("[DEBUG] Flattened resource list: %#v", m)
 	return m
 }
 

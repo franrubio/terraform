@@ -47,6 +47,8 @@ func resourceKubernetesPodCreate(d *schema.ResourceData, meta interface{}) error
 		return err
 	}
 
+	spec.AutomountServiceAccountToken = ptrToBool(false)
+
 	pod := api.Pod{
 		ObjectMeta: metadata,
 		Spec:       spec,
@@ -103,7 +105,7 @@ func resourceKubernetesPodUpdate(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Failed to marshal update operations: %s", err)
 	}
 
-	log.Printf("[INFO] Updating  pod%s: %s", d.Id(), ops)
+	log.Printf("[INFO] Updating  pod %s: %s", d.Id(), ops)
 
 	out, err := conn.CoreV1().Pods(namespace).Patch(name, pkgApi.JSONPatchType, data)
 	if err != nil {
@@ -150,6 +152,23 @@ func resourceKubernetesPodDelete(d *schema.ResourceData, meta interface{}) error
 	namespace, name := idParts(d.Id())
 	log.Printf("[INFO] Deleting pod: %#v", name)
 	err := conn.CoreV1().Pods(namespace).Delete(name, nil)
+	if err != nil {
+		return err
+	}
+
+	err = resource.Retry(1*time.Minute, func() *resource.RetryError {
+		out, err := conn.CoreV1().Pods(namespace).Get(name, metav1.GetOptions{})
+		if err != nil {
+			if statusErr, ok := err.(*errors.StatusError); ok && statusErr.ErrStatus.Code == 404 {
+				log.Printf("[DEBUG] Pod %s just not found: %#v", name, err)
+				return nil
+			}
+			log.Printf("[DEBUG] ERROR: %#v", err)
+			return resource.NonRetryableError(err)
+		}
+		log.Printf("[DEBUG] Current state of pod: %#v", out.Status.Phase)
+		return resource.RetryableError(fmt.Errorf("Pod %s still exists (%s)", name, out.Status.Phase))
+	})
 	if err != nil {
 		return err
 	}

@@ -100,16 +100,16 @@ func resourcesField() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"cpu": {
-						Type:             schema.TypeString,
-						Optional:         true,
-						Computed:         true,
+						Type:     schema.TypeString,
+						Optional: true,
+						// Computed:         true,
 						ValidateFunc:     validateResourceQuantity,
 						DiffSuppressFunc: suppressEquivalentResourceQuantity,
 					},
 					"memory": {
-						Type:             schema.TypeString,
-						Optional:         true,
-						Computed:         true,
+						Type:     schema.TypeString,
+						Optional: true,
+						// Computed:         true,
 						ValidateFunc:     validateResourceQuantity,
 						DiffSuppressFunc: suppressEquivalentResourceQuantity,
 					},
@@ -124,16 +124,16 @@ func resourcesField() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"cpu": {
-						Type:             schema.TypeString,
-						Optional:         true,
-						Computed:         true,
+						Type:     schema.TypeString,
+						Optional: true,
+						// Computed:         true,
 						ValidateFunc:     validateResourceQuantity,
 						DiffSuppressFunc: suppressEquivalentResourceQuantity,
 					},
 					"memory": {
-						Type:             schema.TypeString,
-						Optional:         true,
-						Computed:         true,
+						Type:     schema.TypeString,
+						Optional: true,
+						// Computed:         true,
 						ValidateFunc:     validateResourceQuantity,
 						DiffSuppressFunc: suppressEquivalentResourceQuantity,
 					},
